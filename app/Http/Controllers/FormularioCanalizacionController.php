@@ -13,11 +13,13 @@ class FormularioCanalizacionController extends Controller
 
     private array $rules = [
         'fecha' => 'required|date',
-        'alumno'=> 'required|string'
+        'alumno'=> 'required|string',
+        'descripcion_problema'=> 'required|string|max:225',
     ];
     private array $errorMessages = [
         'fecha.required' => 'El campo fecha es obligatorio',
         'alumno.required' => 'El campo alumno es obligatorio',
+        'descripcion_problema.required'=> 'El campo descripción del problematica es obligatorio',
     ];
 
 

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('modulo')->nullable(false);
             $table->string('descripcion_problema')->nullable(false);
             $table->string('clasificacion_problematica')->nullable(false);
-
+            $table->string('status')->value('En proceso');
 
             $table->foreign('matricula')->references('matricula')->on('alumnos')->onDelete('cascade');
         });

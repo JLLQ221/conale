@@ -4,17 +4,17 @@ import Menu from "@/Components/Menu";
 import SelectFloating from '@/Components/SelectFloating';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextAreaFloating from '@/Components/TextAreaFloating';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import InputError from '@/Components/InputError';
 import InputAutocomplit from '@/Components/InputAutocomplit';
 import axios from 'axios';
 
 
 const Canalizar = ({ auth }) => {
-  const [alumnosAll, setAlumnosAll] = useState([])
+  const [alumnosAll, setAlumnosAll] = useState([]);
   const { data, setData, post, processing, errors, reset } = useForm({
-    fecha: new Date().toISOString().slice(0,10),
-    tutor: auth.user.name  ?? '',
+    fecha: new Date().toISOString().slice(0, 10),
+    tutor: auth.user.name ?? '',
     alumno: '',
     matricula: '',
     turno: '',
@@ -25,28 +25,30 @@ const Canalizar = ({ auth }) => {
     clasificacion_problematica: ''
   });
 
-  const _getAlumnos = async(alumno)=>{
-    if(alumno.trim() !== ''){
-      const response = await axios.get(route('alumnos.getAlumnos', [alumno]));
-      setAlumnosAll(response.data);
-      console.log(response.data);
-    }
-  }
+  const _getAlumnos = async (alumno) => { 
+    if (alumno.trim() !== '') { 
+      const response = await axios.get(route('alumnos.getAlumnos', [alumno])); 
+      return response.data; 
+    } 
+    return []; 
+  };
 
-  const cambiarValores = (e) => {
+  const cambiarValores = async (e) => {
     const alumnoElegido = e.target.value;
-    data.alumno = alumnoElegido;
-    let alumno = alumnosAll.find(item => item.nombre === alumnoElegido) ?? null;
-    if(alumno == null){
-      _getAlumnos(data.alumno);
+    setData("matricula", alumnoElegido);
+    let alumno = alumnosAll.find(item => parseInt(item.matricula) === parseInt(alumnoElegido)) ?? null;
+    if (alumno == null) {
+      const nuevosAlumnos = await _getAlumnos(alumnoElegido);
+      setAlumnosAll(nuevosAlumnos);
     }
-    valoresCambiar(alumno ?? "");
-  }
+    mandarValores(alumno ?? "");
+  };
 
-  const valoresCambiar = (alumno) => {
+
+  const mandarValores = (alumno) => {
     setData((prevData) => ({
       ...prevData,
-      matricula: alumno.matricula ?? '',
+      alumno: alumno.nombre ?? '',
       turno: alumno.turno ?? '',
       carrera: alumno.carrera ?? '',
       grupo: alumno.grupo ?? '',
@@ -58,22 +60,12 @@ const Canalizar = ({ auth }) => {
     post(route('canalizar.post'), { onSuccess: () => reset() });
   };
 
+
   return (
     <Menu user={auth.user}>
       <Head title="Canalizar alumno" />
       <div className='pt-20 mb-4' >
         <form onSubmit={submit} >
-
-          <FormFloating>
-            <FormFloating.Input
-              type='text'
-              id='folio'
-              name="folio"
-              defaultValue='001'
-              disabled
-            />
-            <FormFloating.Label htmlFor='folio'>Folio</FormFloating.Label>
-          </FormFloating>
 
           <FormFloating>
             <FormFloating.Input
@@ -100,38 +92,38 @@ const Canalizar = ({ auth }) => {
           </FormFloating>
 
           <InputAutocomplit>
-            <InputAutocomplit.Input 
-             id='alumno'
-             name='alumno'
-             list='alumnoList'
-             value={data.alumno}
-             onChange={(e) => cambiarValores(e)}
+            <InputAutocomplit.Input
+              id='matricula'
+              name='matricula'
+              list='alumnoList'
+              value={data.matricula}
+              onChange={(e) => cambiarValores(e)}
             />
-        
-             <InputAutocomplit.Select id='alumnoList'>
-             {
+
+            <InputAutocomplit.Select id='alumnoList'>
+              {
                 alumnosAll.map(
                   (alumno) => {
                     return (
-                      <option key={alumno.nombre} value={alumno.nombre}></option>
+                      <option key={alumno.matricula} value={alumno.matricula}></option>
                     )
                   }
                 )
               }
-             </InputAutocomplit.Select>
-            <InputAutocomplit.Label htmlFor='alumno'>Alumno</InputAutocomplit.Label>
+            </InputAutocomplit.Select>
+            <InputAutocomplit.Label htmlFor='alumno'>Matricula de alumno</InputAutocomplit.Label>
           </InputAutocomplit>
 
           <FormFloating>
             <FormFloating.Input
               type='text'
-              id='matricula'
-              name="matricula"
+              id='alumno'
+              name="alumno"
               disabled
-              value={data.matricula}
+              value={data.alumno}
               readOnly={true}
             />
-            <FormFloating.Label htmlFor='matricula'>Matricula</FormFloating.Label>
+            <FormFloating.Label htmlFor='alumno'>Nombre</FormFloating.Label>
           </FormFloating>
 
           <FormFloating>
@@ -208,6 +200,7 @@ const Canalizar = ({ auth }) => {
             >
               Descripción de la problematica
             </TextAreaFloating.Label>
+            <InputError message={errors.descripcion_problema} className='mt-2 pl-1'></InputError>
           </TextAreaFloating>
 
           <SelectFloating>
@@ -218,9 +211,10 @@ const Canalizar = ({ auth }) => {
               onChange={(e) => setData('clasificacion_problematica', e.target.value)}
             >
               <option defaultValue="">Selecciona la categoria de la problematica</option>
-              <option>Emocional: orientación educativa</option>
-              <option>Académico/Conductual: formación técnica</option>
-              <option>Económico: resposanble de becas</option>
+              <option>Emocional</option>
+              <option>Académico</option>
+              <option>Conductual</option>
+              <option>Económico</option>
             </SelectFloating.Selected>
             <SelectFloating.Label
               htmlFor='clasificacionProblematica'
@@ -228,7 +222,7 @@ const Canalizar = ({ auth }) => {
               Clasificación de la problematica
             </SelectFloating.Label>
           </SelectFloating>
-
+       
           <PrimaryButton style={{ height: '50px', fontSize: '16px' }} className="my-2 w-full" disabled={processing}>
             Enviar
           </PrimaryButton>
